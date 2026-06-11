@@ -36,13 +36,13 @@
     <MSBuild Projects="..\Jobby.Dashboard.Client\Jobby.Dashboard.Client.csproj"
              Targets="Publish"
              Properties="Configuration=$(Configuration);PublishDir=$(_JobbyClientPublishDir)" />
-    <Error Condition="!Exists('$(_JobbyClientPublishDir)wwwroot\_framework\blazor.boot.json')"
+    <Error Condition="!Exists('$(_JobbyClientPublishDir)wwwroot/_framework/blazor.boot.json')"
            Text="Jobby Dashboard client embed failed: no published WASM assets at $(_JobbyClientPublishDir)wwwroot. The EmbedJobbyDashboardClient target did not produce the expected output." />
     <ItemGroup>
-      <_JobbyClientAsset Include="$(_JobbyClientPublishDir)wwwroot\**\*"
-                         Exclude="$(_JobbyClientPublishDir)wwwroot\**\*.gz" />
+      <_JobbyClientAsset Include="$(_JobbyClientPublishDir)wwwroot/**/*"
+                         Exclude="$(_JobbyClientPublishDir)wwwroot/**/*.gz" />
       <EmbeddedResource Include="@(_JobbyClientAsset)"
-                        Link="wwwroot\%(_JobbyClientAsset.RecursiveDir)%(_JobbyClientAsset.Filename)%(_JobbyClientAsset.Extension)" />
+                        Link="wwwroot/%(_JobbyClientAsset.RecursiveDir)%(_JobbyClientAsset.Filename)%(_JobbyClientAsset.Extension)" />
     </ItemGroup>
   </Target>
 
