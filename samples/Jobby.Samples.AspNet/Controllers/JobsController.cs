@@ -1,6 +1,7 @@
 ﻿using Jobby.Core.Interfaces;
 using Jobby.Core.Models;
 using Jobby.Samples.AspNet.Db;
+using Jobby.Samples.AspNet.DashboardDemo;
 using Jobby.Samples.AspNet.Jobs;
 using Jobby.Samples.AspNet.Schedulers;
 using Microsoft.AspNetCore.Mvc;
@@ -14,12 +15,18 @@ public class JobsController
     private readonly IJobbyClient _jobbyClient;
     private readonly IJobsFactory _jobsFactory;
     private readonly JobbySampleDbContext _dbContext;
+    private readonly DashboardDemoSeeder _dashboardDemoSeeder;
 
-    public JobsController(IJobbyClient jobbyClient, IJobsFactory jobsFactory, JobbySampleDbContext dbContext)
+    public JobsController(
+        IJobbyClient jobbyClient,
+        IJobsFactory jobsFactory,
+        JobbySampleDbContext dbContext,
+        DashboardDemoSeeder dashboardDemoSeeder)
     {
         _jobbyClient = jobbyClient;
         _jobsFactory = jobsFactory;
         _dbContext = dbContext;
+        _dashboardDemoSeeder = dashboardDemoSeeder;
     }
 
     [HttpPost("enqueue-job")]
@@ -96,5 +103,12 @@ public class JobsController
     {
         await _jobbyClient.CancelRecurrentAsync<CustomSchedulerRecurrentJobCommand>();
         return "ok";
+    }
+
+    [HttpPost("seed-dashboard-demo")]
+    public Task<DashboardDemoSeedResult> SeedDashboardDemo([FromQuery] bool reset = true,
+        CancellationToken cancellationToken = default)
+    {
+        return _dashboardDemoSeeder.SeedAsync(reset, cancellationToken);
     }
 }
