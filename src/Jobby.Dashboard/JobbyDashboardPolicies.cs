@@ -1,4 +1,4 @@
-namespace Jobby.Dashboard.Authorization;
+namespace Jobby.Dashboard;
 
 public static class JobbyDashboardPolicies
 {

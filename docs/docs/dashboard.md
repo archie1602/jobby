@@ -97,6 +97,8 @@ app.Run();
 
 The static Blazor WebAssembly application and framework assets are **always public** - they contain no secrets and must be downloadable by the browser before the app boots. Only the JSON API (`/jobby/api/*`) is gated by the chosen policy. This architecture holds even when the host sets a global `AuthorizationOptions.FallbackPolicy`: the static assets carry explicit `AllowAnonymous`; the API carries `RequireAuthorization`.
 
+> **Authentication/authorization middleware is required.** The dashboard protects its API with endpoint authorization metadata (`RequireAuthorization`); it does not insert middleware into your pipeline. With the standard minimal hosting model this works out of the box: `AddJobbyDashboard` registers the authentication/authorization services and `WebApplication` adds `UseAuthentication`/`UseAuthorization` automatically. If you build the middleware pipeline manually (for example with `UseRouting`/`UseEndpoints`), you **must** call `app.UseAuthentication()` and `app.UseAuthorization()` before the dashboard endpoints - without the authorization middleware the API's authorization metadata is not enforced.
+
 Choose exactly one of the following:
 
 ### Option 1 - Anonymous (local dev only)

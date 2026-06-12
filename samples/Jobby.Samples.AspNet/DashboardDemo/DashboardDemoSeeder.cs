@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Jobby.Core.Models;
+using Jobby.Postgres.Dashboard;
 using Jobby.Samples.AspNet.Jobs;
 using Npgsql;
 
@@ -7,21 +8,33 @@ namespace Jobby.Samples.AspNet.DashboardDemo;
 
 public sealed class DashboardDemoSeeder
 {
-    private const string JobsTable = "jobby_jobs";
-    private const string ServersTable = "jobby_servers";
-
     private static readonly Guid ChainWaitingJobId = Guid.Parse("10000000-0000-0000-0000-000000000007");
 
     private readonly NpgsqlDataSource _dataSource;
     private readonly ILogger<DashboardDemoSeeder> _logger;
+    private readonly string _jobsTable;
+    private readonly string _serversTable;
 
-    public DashboardDemoSeeder(NpgsqlDataSource dataSource, ILogger<DashboardDemoSeeder> logger)
+    public DashboardDemoSeeder(
+        NpgsqlDataSource dataSource,
+        PostgresqlDashboardStorageOptions storageOptions,
+        ILogger<DashboardDemoSeeder> logger)
     {
         _dataSource = dataSource;
         _logger = logger;
+        _jobsTable = TableName(storageOptions, "jobs");
+        _serversTable = TableName(storageOptions, "servers");
     }
 
-    public async Task<DashboardDemoSeedResult> SeedAsync(bool reset = true, CancellationToken cancellationToken = default)
+    private static string TableName(PostgresqlDashboardStorageOptions options, string name)
+    {
+        return string.IsNullOrEmpty(options.SchemaName)
+            ? $"\"{options.TablesPrefix}{name}\""
+            : $"\"{options.SchemaName}\".\"{options.TablesPrefix}{name}\"";
+    }
+
+    public async Task<DashboardDemoSeedResult> SeedAsync(bool reset = true,
+        CancellationToken cancellationToken = default)
     {
         var now = DateTime.UtcNow;
         var jobs = CreateJobs(now);
@@ -33,32 +46,32 @@ public sealed class DashboardDemoSeeder
         if (reset)
         {
             batch.BatchCommands.Add(new NpgsqlBatchCommand($"""
-                DELETE FROM {JobsTable}
-                WHERE id IN (
-                    '10000000-0000-0000-0000-000000000001',
-                    '10000000-0000-0000-0000-000000000002',
-                    '10000000-0000-0000-0000-000000000003',
-                    '10000000-0000-0000-0000-000000000004',
-                    '10000000-0000-0000-0000-000000000005',
-                    '10000000-0000-0000-0000-000000000006',
-                    '10000000-0000-0000-0000-000000000007',
-                    '10000000-0000-0000-0000-000000000008',
-                    '10000000-0000-0000-0000-000000000009',
-                    '10000000-0000-0000-0000-000000000010',
-                    '10000000-0000-0000-0000-000000000011',
-                    '10000000-0000-0000-0000-000000000012',
-                    '10000000-0000-0000-0000-000000000013',
-                    '10000000-0000-0000-0000-000000000014'
-                )
-                OR job_name LIKE 'DashboardDemo:%'
-                OR job_param LIKE '%dashboard-demo:%';
-                """));
+                                                            DELETE FROM {_jobsTable}
+                                                            WHERE id IN (
+                                                                '10000000-0000-0000-0000-000000000001',
+                                                                '10000000-0000-0000-0000-000000000002',
+                                                                '10000000-0000-0000-0000-000000000003',
+                                                                '10000000-0000-0000-0000-000000000004',
+                                                                '10000000-0000-0000-0000-000000000005',
+                                                                '10000000-0000-0000-0000-000000000006',
+                                                                '10000000-0000-0000-0000-000000000007',
+                                                                '10000000-0000-0000-0000-000000000008',
+                                                                '10000000-0000-0000-0000-000000000009',
+                                                                '10000000-0000-0000-0000-000000000010',
+                                                                '10000000-0000-0000-0000-000000000011',
+                                                                '10000000-0000-0000-0000-000000000012',
+                                                                '10000000-0000-0000-0000-000000000013',
+                                                                '10000000-0000-0000-0000-000000000014'
+                                                            )
+                                                            OR job_name LIKE 'DashboardDemo:%'
+                                                            OR job_param LIKE '%dashboard-demo:%';
+                                                            """));
 
             batch.BatchCommands.Add(new NpgsqlBatchCommand($"""
-                DELETE FROM {ServersTable}
-                WHERE id IN ('dashboard-demo-live-a', 'dashboard-demo-live-b', 'dashboard-demo-stale',
-                             'dashboard-demo-lagging');
-                """));
+                                                            DELETE FROM {_serversTable}
+                                                            WHERE id IN ('dashboard-demo-live-a', 'dashboard-demo-live-b', 'dashboard-demo-stale',
+                                                                         'dashboard-demo-lagging');
+                                                            """));
         }
 
         foreach (var job in jobs)
@@ -275,36 +288,36 @@ public sealed class DashboardDemoSeeder
         ];
     }
 
-    private static NpgsqlBatchCommand CreateJobCommand(DemoJobRow job)
+    private NpgsqlBatchCommand CreateJobCommand(DemoJobRow job)
     {
         return new NpgsqlBatchCommand($"""
-            INSERT INTO {JobsTable} (
-                id, job_name, job_param, status, error, created_at, scheduled_start_at,
-                last_started_at, last_finished_at, started_count, next_job_id, server_id,
-                can_be_restarted, queue_name, serializable_group_id, lock_group_if_failed,
-                is_exclusive, schedule, scheduler_type
-            )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
-            ON CONFLICT (id) DO UPDATE SET
-                job_name = EXCLUDED.job_name,
-                job_param = EXCLUDED.job_param,
-                status = EXCLUDED.status,
-                error = EXCLUDED.error,
-                created_at = EXCLUDED.created_at,
-                scheduled_start_at = EXCLUDED.scheduled_start_at,
-                last_started_at = EXCLUDED.last_started_at,
-                last_finished_at = EXCLUDED.last_finished_at,
-                started_count = EXCLUDED.started_count,
-                next_job_id = EXCLUDED.next_job_id,
-                server_id = EXCLUDED.server_id,
-                can_be_restarted = EXCLUDED.can_be_restarted,
-                queue_name = EXCLUDED.queue_name,
-                serializable_group_id = EXCLUDED.serializable_group_id,
-                lock_group_if_failed = EXCLUDED.lock_group_if_failed,
-                is_exclusive = EXCLUDED.is_exclusive,
-                schedule = EXCLUDED.schedule,
-                scheduler_type = EXCLUDED.scheduler_type;
-            """)
+                                       INSERT INTO {_jobsTable} (
+                                           id, job_name, job_param, status, error, created_at, scheduled_start_at,
+                                           last_started_at, last_finished_at, started_count, next_job_id, server_id,
+                                           can_be_restarted, queue_name, serializable_group_id, lock_group_if_failed,
+                                           is_exclusive, schedule, scheduler_type
+                                       )
+                                       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+                                       ON CONFLICT (id) DO UPDATE SET
+                                           job_name = EXCLUDED.job_name,
+                                           job_param = EXCLUDED.job_param,
+                                           status = EXCLUDED.status,
+                                           error = EXCLUDED.error,
+                                           created_at = EXCLUDED.created_at,
+                                           scheduled_start_at = EXCLUDED.scheduled_start_at,
+                                           last_started_at = EXCLUDED.last_started_at,
+                                           last_finished_at = EXCLUDED.last_finished_at,
+                                           started_count = EXCLUDED.started_count,
+                                           next_job_id = EXCLUDED.next_job_id,
+                                           server_id = EXCLUDED.server_id,
+                                           can_be_restarted = EXCLUDED.can_be_restarted,
+                                           queue_name = EXCLUDED.queue_name,
+                                           serializable_group_id = EXCLUDED.serializable_group_id,
+                                           lock_group_if_failed = EXCLUDED.lock_group_if_failed,
+                                           is_exclusive = EXCLUDED.is_exclusive,
+                                           schedule = EXCLUDED.schedule,
+                                           scheduler_type = EXCLUDED.scheduler_type;
+                                       """)
         {
             Parameters =
             {
@@ -331,18 +344,18 @@ public sealed class DashboardDemoSeeder
         };
     }
 
-    private static NpgsqlBatchCommand CreateServerCommand(DemoServerRow server)
+    private NpgsqlBatchCommand CreateServerCommand(DemoServerRow server)
     {
         return new NpgsqlBatchCommand($"""
-            INSERT INTO {ServersTable} (id, heartbeat_ts)
-            VALUES ($1, $2)
-            ON CONFLICT (id) DO UPDATE SET heartbeat_ts = EXCLUDED.heartbeat_ts;
-            """)
+                                       INSERT INTO {_serversTable} (id, heartbeat_ts)
+                                       VALUES ($1, $2)
+                                       ON CONFLICT (id) DO UPDATE SET heartbeat_ts = EXCLUDED.heartbeat_ts;
+                                       """)
         {
             Parameters =
             {
-                new() { Value = server.Id },
-                new() { Value = server.HeartbeatTs },
+                new NpgsqlParameter { Value = server.Id },
+                new NpgsqlParameter { Value = server.HeartbeatTs },
             }
         };
     }

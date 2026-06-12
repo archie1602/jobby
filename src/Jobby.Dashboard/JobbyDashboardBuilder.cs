@@ -1,4 +1,3 @@
-using Jobby.Dashboard.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Jobby.Dashboard;

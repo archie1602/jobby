@@ -2,7 +2,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using Jobby.Core.Models;
 using Jobby.Core.Models.Dashboard;
-using Jobby.Dashboard.Authorization;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -24,58 +23,69 @@ internal static class JobbyDashboardApi
             api.AllowAnonymous();
         }
 
-        api.MapGet("config", (HttpContext http, IDashboardDataReader reader, JobbyDashboardOptions opts, IAntiforgery antiforgery) =>
-        {
-            var tokens = antiforgery.GetAndStoreTokens(http);
-            http.Response.Headers.CacheControl = "no-store";
-            http.Response.Headers.Pragma = "no-cache";
-
-            if (string.IsNullOrWhiteSpace(tokens.HeaderName) || string.IsNullOrWhiteSpace(tokens.RequestToken))
+        api.MapGet("config",
+            (HttpContext http, IDashboardDataReader reader, JobbyDashboardOptions opts, IAntiforgery antiforgery) =>
             {
-                return Results.Problem(
-                    "Jobby Dashboard requires ASP.NET Core antiforgery to be configured with a request-token header.",
-                    statusCode: StatusCodes.Status500InternalServerError);
-            }
+                var tokens = antiforgery.GetAndStoreTokens(http);
+                http.Response.Headers.CacheControl = "no-store";
+                http.Response.Headers.Pragma = "no-cache";
 
-            var defaultTimeZoneId = opts.DefaultTimeZoneId;
-            if (!string.IsNullOrWhiteSpace(defaultTimeZoneId) &&
-                !TimeZoneInfo.TryFindSystemTimeZoneById(defaultTimeZoneId, out _))
-            {
-                defaultTimeZoneId = null;
-            }
+                if (string.IsNullOrWhiteSpace(tokens.HeaderName) || string.IsNullOrWhiteSpace(tokens.RequestToken))
+                {
+                    return Results.Problem(
+                        "Jobby Dashboard requires ASP.NET Core antiforgery to be configured with a request-token header.",
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
 
-            return Results.Ok(new JobbyDashboardClientConfigDto
-            {
-                RefreshIntervalSeconds = opts.RefreshInterval?.TotalSeconds,
-                StaleServerThresholdSeconds = opts.StaleServerThresholdSeconds,
-                ReadOnly = opts.ReadOnly,
-                ManagementEnabled = reader.ManagementEnabled,
-                ManagementRequestHeaderName = tokens.HeaderName,
-                ManagementRequestToken = tokens.RequestToken,
-                DefaultTimeZoneId = defaultTimeZoneId,
-                DefaultDateStyle = opts.DefaultDateStyle,
-                DefaultTimeStyle = opts.DefaultTimeStyle,
-                ServerTimeUtc = DateTime.UtcNow,
-                DefaultLanguage = opts.DefaultLanguage,
+                var defaultTimeZoneId = opts.DefaultTimeZoneId;
+                if (!string.IsNullOrWhiteSpace(defaultTimeZoneId) &&
+                    !TimeZoneInfo.TryFindSystemTimeZoneById(defaultTimeZoneId, out _))
+                {
+                    defaultTimeZoneId = null;
+                }
+
+                return Results.Ok(new JobbyDashboardClientConfigDto
+                {
+                    RefreshIntervalSeconds = opts.RefreshInterval?.TotalSeconds,
+                    StaleServerThresholdSeconds = opts.StaleServerThresholdSeconds,
+                    ReadOnly = opts.ReadOnly,
+                    ManagementEnabled = reader.ManagementEnabled,
+                    ManagementRequestHeaderName = tokens.HeaderName,
+                    ManagementRequestToken = tokens.RequestToken,
+                    DefaultTimeZoneId = defaultTimeZoneId,
+                    DefaultDateStyle = opts.DefaultDateStyle,
+                    DefaultTimeStyle = opts.DefaultTimeStyle,
+                    ServerTimeUtc = DateTime.UtcNow,
+                    DefaultLanguage = opts.DefaultLanguage,
+                });
             });
-        });
 
-        api.MapGet("stats", (IDashboardDataReader reader, CancellationToken cancellationToken) => reader.GetStatsAsync(cancellationToken));
+        api.MapGet("stats",
+            (IDashboardDataReader reader, CancellationToken cancellationToken) =>
+                reader.GetStatsAsync(cancellationToken));
 
         api.MapGet("jobs", (HttpContext http, IDashboardDataReader reader, CancellationToken cancellationToken) =>
             reader.GetJobsAsync(ParseJobsQuery(http.Request.Query), cancellationToken));
 
-        api.MapGet("jobs/{id:guid}", async (Guid id, IDashboardDataReader reader, CancellationToken cancellationToken) =>
-            await reader.GetJobByIdAsync(id, cancellationToken) is { } details ? Results.Ok(details) : Results.NotFound());
+        api.MapGet("jobs/{id:guid}",
+            async (Guid id, IDashboardDataReader reader, CancellationToken cancellationToken) =>
+                await reader.GetJobByIdAsync(id, cancellationToken) is { } details
+                    ? Results.Ok(details)
+                    : Results.NotFound());
 
         api.MapGet("recurrent", (HttpContext http, IDashboardDataReader reader, CancellationToken cancellationToken) =>
             reader.GetRecurrentJobsAsync(ParseRecurrentQuery(http.Request.Query), cancellationToken));
 
-        api.MapGet("servers", (IDashboardDataReader reader, CancellationToken cancellationToken) => reader.GetServersAsync(cancellationToken));
-        api.MapGet("queues", (IDashboardDataReader reader, CancellationToken cancellationToken) => reader.GetQueuesAsync(cancellationToken));
+        api.MapGet("servers",
+            (IDashboardDataReader reader, CancellationToken cancellationToken) =>
+                reader.GetServersAsync(cancellationToken));
+        api.MapGet("queues",
+            (IDashboardDataReader reader, CancellationToken cancellationToken) =>
+                reader.GetQueuesAsync(cancellationToken));
 
-        api.MapGet("locked-groups", (HttpContext http, IDashboardDataReader reader, CancellationToken cancellationToken) =>
-            reader.GetLockedGroupsAsync(ParseLockedGroupsQuery(http.Request.Query), cancellationToken));
+        api.MapGet("locked-groups",
+            (HttpContext http, IDashboardDataReader reader, CancellationToken cancellationToken) =>
+                reader.GetLockedGroupsAsync(ParseLockedGroupsQuery(http.Request.Query), cancellationToken));
 
         api.MapGet("locked-groups/detail",
             async (HttpContext http, IDashboardDataReader reader, CancellationToken cancellationToken) =>
@@ -97,20 +107,26 @@ internal static class JobbyDashboardApi
     private static void MapManagementActions(IEndpointRouteBuilder api, JobbyDashboardAuthState state)
     {
         Manage(api.MapPost("jobs/{id:guid}/trigger",
-            (Guid id, HttpContext http, IDashboardDataReader reader, IAntiforgery antiforgery, CancellationToken cancellationToken) =>
+            (Guid id, HttpContext http, IDashboardDataReader reader, IAntiforgery antiforgery,
+                    CancellationToken cancellationToken) =>
                 RunAsync(http, reader, antiforgery, () => reader.TriggerJobsAsync([id], cancellationToken))), state);
 
         Manage(api.MapPost("jobs/{id:guid}/retry",
-            (Guid id, HttpContext http, IDashboardDataReader reader, IAntiforgery antiforgery, CancellationToken cancellationToken) =>
+            (Guid id, HttpContext http, IDashboardDataReader reader, IAntiforgery antiforgery,
+                    CancellationToken cancellationToken) =>
                 RunAsync(http, reader, antiforgery, () => reader.RetryJobsAsync([id], cancellationToken))), state);
 
         Manage(api.MapDelete("jobs/{id:guid}",
-            (Guid id, HttpContext http, IDashboardDataReader reader, IAntiforgery antiforgery, CancellationToken cancellationToken) =>
+            (Guid id, HttpContext http, IDashboardDataReader reader, IAntiforgery antiforgery,
+                    CancellationToken cancellationToken) =>
                 RunAsync(http, reader, antiforgery, () => reader.DeleteJobsAsync([id], cancellationToken))), state);
 
         Manage(api.MapDelete("recurrent/{id:guid}",
-            (Guid id, HttpContext http, IDashboardDataReader reader, IAntiforgery antiforgery, CancellationToken cancellationToken) =>
-                RunAsync(http, reader, antiforgery, () => reader.DeleteRecurrentJobsAsync([id], cancellationToken))), state);
+                (Guid id, HttpContext http, IDashboardDataReader reader, IAntiforgery antiforgery,
+                        CancellationToken cancellationToken) =>
+                    RunAsync(http, reader, antiforgery,
+                        () => reader.DeleteRecurrentJobsAsync([id], cancellationToken))),
+            state);
 
         Manage(api.MapPost("locked-groups/unlock-request",
             async (UnlockGroupRequest body, HttpContext http, IDashboardDataReader reader,
@@ -172,12 +188,13 @@ internal static class JobbyDashboardApi
             Statuses = ParseStatuses(QueryValue(query, "statuses")),
             QueueName = QueryValue(query, "queueName"),
             JobNameSearch = QueryValue(query, "jobNameSearch"),
+            // Note: AssumeUniversal | AdjustToUniversal: values are bound to timestamptz parameters, which Npgsql only accepts with DateTimeKind.Utc.
             CreatedFrom = DateTime.TryParse(QueryValue(query, "createdFrom"), CultureInfo.InvariantCulture,
-                DateTimeStyles.RoundtripKind, out var cf)
+                DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var cf)
                 ? cf
                 : null,
             CreatedTo = DateTime.TryParse(QueryValue(query, "createdTo"), CultureInfo.InvariantCulture,
-                DateTimeStyles.RoundtripKind, out var ctv)
+                DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var ctv)
                 ? ctv
                 : null,
             Page = int.TryParse(QueryValue(query, "page"), out var p) ? p : 1,

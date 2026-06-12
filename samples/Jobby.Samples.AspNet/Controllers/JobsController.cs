@@ -43,7 +43,7 @@ public class JobsController
     }
 
     [HttpPost("enqueue-job-by-ef")]
-    public async Task<string> EnqueueDemoJobByEF([FromBody] DemoJobCommand command)
+    public async Task<string> EnqueueDemoJobByEf([FromBody] DemoJobCommand command)
     {
         var job = _jobsFactory.Create(command);
         _dbContext.Jobs.Add(job);
@@ -60,6 +60,7 @@ public class JobsController
             var job = _jobsFactory.Create(command);
             jobs.Add(job);
         }
+
         await _jobbyClient.EnqueueBatchAsync(jobs);
         return jobs.Select(x => x.Id.ToString()).ToList();
     }
@@ -97,7 +98,7 @@ public class JobsController
         await _jobbyClient.CancelRecurrentAsync<EmptyRecurrentJobCommand>();
         return "ok";
     }
-    
+
     [HttpPost("cancel-recurrent-with-custom-scheduler")]
     public async Task<string> CancelRecurrentWithCustomScheduler()
     {
@@ -106,9 +107,17 @@ public class JobsController
     }
 
     [HttpPost("seed-dashboard-demo")]
-    public Task<DashboardDemoSeedResult> SeedDashboardDemo([FromQuery] bool reset = true,
+    public async Task<ActionResult<DashboardDemoSeedResult>> SeedDashboardDemo(
+        [FromServices] IWebHostEnvironment environment,
+        [FromQuery] bool reset = true,
         CancellationToken cancellationToken = default)
     {
-        return _dashboardDemoSeeder.SeedAsync(reset, cancellationToken);
+        // dev-only endpoint
+        if (!environment.IsDevelopment())
+        {
+            return new NotFoundResult();
+        }
+
+        return await _dashboardDemoSeeder.SeedAsync(reset, cancellationToken);
     }
 }

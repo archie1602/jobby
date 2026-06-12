@@ -1,4 +1,4 @@
-using Jobby.Dashboard.Authorization;
+using Jobby.Dashboard;
 
 namespace Jobby.Tests.Dashboard;
 

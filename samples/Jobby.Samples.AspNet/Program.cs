@@ -35,9 +35,16 @@ public static class Program
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
 
-        var connectionString = "Host=localhost;Username=jobby;Password=jobby;Database=jobby_tests_db;GSS Encryption Mode=Disable";
+        const string connectionString = "Host=localhost;Username=jobby;Password=jobby;Database=jobby_tests_db;GSS Encryption Mode=Disable";
         var dataSource = NpgsqlDataSource.Create(connectionString);
-        builder.Services.AddSingleton<NpgsqlDataSource>(dataSource);
+        builder.Services.AddSingleton(dataSource);
+
+        var dashboardStorageOptions = new PostgresqlDashboardStorageOptions
+        {
+            SchemaName = "",
+            TablesPrefix = "jobby_",
+        };
+        builder.Services.AddSingleton(dashboardStorageOptions);
         builder.Services.AddSingleton<DashboardDemoSeeder>();
 
         builder.Services.AddJobbyDashboard()
@@ -49,8 +56,8 @@ public static class Program
 
         builder.Services.AddJobbyPostgresDashboardStorage(dataSource, o =>
         {
-            o.SchemaName = "";
-            o.TablesPrefix = "jobby_";
+            o.SchemaName = dashboardStorageOptions.SchemaName;
+            o.TablesPrefix = dashboardStorageOptions.TablesPrefix;
         });
 
         builder.Services.AddDbContext<JobbySampleDbContext>((sp, opts) =>
@@ -61,12 +68,12 @@ public static class Program
 
         builder.Services.AddScoped<JobLoggingMiddleware>();
         const string recurrentJobsQueueName = "recurrent";
-        builder.Services.AddJobbyServerAndClient((IAspNetCoreJobbyConfigurable jobbyBuilder) =>
+        builder.Services.AddJobbyServerAndClient(jobbyBuilder =>
         {
             jobbyBuilder
                 .AddJobsFromAssemblies(typeof(DemoJobCommand).Assembly)
                 .UseQueueForAllRecurrent(recurrentJobsQueueName);
-            
+
             jobbyBuilder.ConfigureJobby((sp, jobby) =>
             {
                 jobby
@@ -77,7 +84,8 @@ public static class Program
                         MaxDegreeOfParallelism = 10,
                         TakeToProcessingBatchSize = 10,
                         MaxNoHeartbeatIntervalSeconds = 600,
-                        Queues = [
+                        Queues =
+                        [
                             new QueueSettings { QueueName = QueueSettings.DefaultQueueName },
                             new QueueSettings { QueueName = recurrentJobsQueueName }
                         ]
@@ -89,11 +97,11 @@ public static class Program
                     })
                     .UseScheduler(new SecondsIntervalScheduleHandler())
                     .ConfigurePipeline(pipeline =>
-                    {   
+                    {
                         pipeline.Use<JobLoggingMiddleware>();
                         pipeline.Use(new IgnoreSomeErrorsMiddleware());
                     });
-                
+
                 if (appJobbyConfig.UseMetrics)
                 {
                     jobby.UseMetrics();
@@ -109,7 +117,8 @@ public static class Program
         builder.Services
             .AddOpenTelemetry()
             .ConfigureResource(resource => resource.AddService(serviceName: "Jobby.Samples.AspNet"))
-            .WithMetrics(metricsBuilder => {
+            .WithMetrics(metricsBuilder =>
+            {
                 metricsBuilder.AddPrometheusExporter();
 
                 metricsBuilder.AddMeter(JobbyMeterNames.GetAll());

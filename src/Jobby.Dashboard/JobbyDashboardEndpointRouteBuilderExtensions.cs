@@ -1,5 +1,4 @@
 using Jobby.Core.Interfaces.Dashboard;
-using Jobby.Dashboard.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;

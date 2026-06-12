@@ -1,5 +1,4 @@
 using Jobby.Dashboard;
-using Jobby.Dashboard.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -11,6 +10,24 @@ public class JobbyDashboardBuilderTests
     {
         services = new ServiceCollection();
         return new JobbyDashboardBuilder(services, new JobbyDashboardAuthState());
+    }
+
+    [Fact]
+    public void AddJobbyDashboard_OptionsAreSettableFromConfigureLambda_AsDocumented()
+    {
+        var services = new ServiceCollection();
+
+        services.AddJobbyDashboard(o =>
+        {
+            o.RefreshInterval = TimeSpan.FromSeconds(10);
+            o.StaleServerThresholdSeconds = 600;
+            o.ReadOnly = true;
+        });
+
+        var options = services.BuildServiceProvider().GetRequiredService<JobbyDashboardOptions>();
+        Assert.Equal(TimeSpan.FromSeconds(10), options.RefreshInterval);
+        Assert.Equal(600, options.StaleServerThresholdSeconds);
+        Assert.True(options.ReadOnly);
     }
 
     [Fact]

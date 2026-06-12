@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using Jobby.Dashboard.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 

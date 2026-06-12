@@ -1,4 +1,4 @@
-namespace Jobby.Dashboard.Authorization;
+namespace Jobby.Dashboard;
 
 internal enum JobbyDashboardAuthMode
 {
