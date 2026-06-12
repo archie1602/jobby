@@ -99,7 +99,7 @@ else if (_queues is not null)
                             {
                                 <MudPaper Outlined="true" Elevation="0" Class="mt-1"
                                           Style="background:var(--bg-0);overflow:hidden;">
-                                    <MudSimpleTable Dense="true" Style="font-size:12.5px;">
+                                    <MudSimpleTable Dense="true" Class="jobby-text-sm">
                                         <thead>
                                         <tr>
                                             <th>@L["field.id"]</th>
@@ -127,8 +127,7 @@ else if (_queues is not null)
                                         </tbody>
                                     </MudSimpleTable>
                                 </MudPaper>
-                                <MudLink Href="@QueueHref(q.QueueName)" Class="d-inline-block mt-2"
-                                         Style="font-size:12.5px;"
+                                <MudLink Href="@QueueHref(q.QueueName)" Class="d-inline-block mt-2 jobby-text-sm"
                                          data-testid="@($"queue-viewall-{TestToken(q.QueueName)}")">@L.Format("queues.viewAll", preview.Total)</MudLink>
                             }
                         </td>

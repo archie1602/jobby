@@ -27,6 +27,7 @@ internal static class JobbyDashboardClientAssets
             }
         };
         p.Mappings.TryAdd(".json", "application/json");
+        p.Mappings.TryAdd(".webmanifest", "application/manifest+json");
         return p;
     }
 }

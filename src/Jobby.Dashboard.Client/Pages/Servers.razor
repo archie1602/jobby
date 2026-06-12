@@ -54,14 +54,14 @@ else if (_servers is not null)
                                   style="background:@(alive ? "var(--st-alive-bg)" : "var(--st-stale-bg)");color:@(alive ? "var(--st-alive)" : "var(--st-stale)");">
                                 <MudIcon Icon="@Icons.Material.Filled.Dns" Size="Size.Small"/>
                             </span>
-                            <span class="jobby-mono" style="font-size:12.5px;color:var(--text-1);">@s.Id</span>
+                            <span class="jobby-mono jobby-text-sm" style="color:var(--text-1);">@s.Id</span>
                         </div>
                     </td>
                     <td>
-                        <div class="jobby-mono"
-                             style="font-size:12.5px;color:var(--text-1);">@Dt.FormatAbsolute(s.HeartbeatTs)</div>
-                        <div
-                            style="font-size:11.5px;color:var(--text-3);">@L.Relative(s.HeartbeatTs, allowFuture: false)</div>
+                        <div class="jobby-mono jobby-text-sm"
+                             style="color:var(--text-1);">@Dt.FormatAbsolute(s.HeartbeatTs)</div>
+                        <div class="jobby-text-xs"
+                             style="color:var(--text-3);">@L.Relative(s.HeartbeatTs, allowFuture: false)</div>
                     </td>
                     <td data-testid="@($"server-state-{s.Id}")">
                         <ServerStateChip Alive="alive"/>

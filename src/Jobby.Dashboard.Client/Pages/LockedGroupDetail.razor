@@ -10,7 +10,7 @@
 <div class="d-flex align-center gap-2 mb-2">
     <MudIconButton Href="locked-groups" Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small"
                    Color="Color.Default" data-testid="back-to-locked-groups"/>
-    <MudText Class="jobby-mono" Style="font-size:12.5px;color:var(--text-3);">@L["nav.lockedGroups"]</MudText>
+    <MudText Class="jobby-mono jobby-text-sm" Style="color:var(--text-3);">@L["nav.lockedGroups"]</MudText>
 </div>
 
 <PageHeader Title="@L.Format("lockedGroupDetail.titlePrefix", GroupId ?? string.Empty)">
@@ -39,17 +39,17 @@ else
         <MudSimpleTable Dense="true" Bordered="false" Elevation="0" data-testid="locked-group-header">
             <tbody>
             <tr>
-                <td style="@KeyStyle">@L["lockedGroups.locker"]</td>
+                <td class="jobby-detail-key">@L["lockedGroups.locker"]</td>
                 <td>
                     <div class="d-flex align-center gap-2">
-                        <span class="jobby-mono"
-                              style="font-size:12.5px;color:var(--text-1);">@_details.LockerName</span>
+                        <span class="jobby-mono jobby-text-sm"
+                              style="color:var(--text-1);">@_details.LockerName</span>
                         <StatusChip Status="_details.LockerStatus"/>
                     </div>
                 </td>
             </tr>
             <tr>
-                <td style="@KeyStyle">@L["field.server"]</td>
+                <td class="jobby-detail-key">@L["field.server"]</td>
                 <td>
                     @if (string.IsNullOrEmpty(_details.LockerServerId))
                     {
@@ -62,11 +62,11 @@ else
                 </td>
             </tr>
             <tr>
-                <td style="@KeyStyle">@L["lockedGroupDetail.stuckSince"]</td>
+                <td class="jobby-detail-key">@L["lockedGroupDetail.stuckSince"]</td>
                 <td><span class="jobby-mono">@Dt.FormatAbsolute(_details.StuckSince)</span></td>
             </tr>
             <tr>
-                <td style="@KeyStyle">@L["nav.queues"]</td>
+                <td class="jobby-detail-key">@L["nav.queues"]</td>
                 <td>
                     <div class="d-flex flex-wrap align-center gap-1">
                         @foreach (var q in _details.Queues)
@@ -77,7 +77,7 @@ else
                 </td>
             </tr>
             <tr>
-                <td style="@KeyStyle">@L["lockedGroups.unlock"]</td>
+                <td class="jobby-detail-key">@L["lockedGroups.unlock"]</td>
                 <td>
                     @if (_details.UnlockRequested)
                     {
@@ -109,7 +109,7 @@ else
             @if (!string.IsNullOrEmpty(_details.LockerError))
             {
                 <tr>
-                    <td style="@KeyStyle">@L["jobDetail.error"]</td>
+                    <td class="jobby-detail-key">@L["jobDetail.error"]</td>
                     <td>
                         <CodeBlock Text="@_details.LockerError" IsError="true" TestId="locked-group-error-text"
                                    CopyTestId="copy-locker-error" CopyTooltip="@L["jobDetail.copyError"]"/>
@@ -146,15 +146,14 @@ else
                         <span style="font-weight:500;">@L.Role(j.Role)</span>
                     </div>
                 </td>
-                <td><span class="jobby-mono" style="font-size:12.5px;color:var(--text-1);">@j.JobName</span></td>
+                <td><span class="jobby-mono jobby-text-sm" style="color:var(--text-1);">@j.JobName</span></td>
                 <td>
                     <StatusChip Status="j.Status"/>
                 </td>
                 <td><span class="jobby-mono" style="color:var(--text-1);">@Dt.FormatAbsolute(j.ScheduledStartAt)</span>
                 </td>
                 <td>
-                    <MudLink Href="@($"jobs/{j.Id}")" Class="jobby-mono"
-                             Style="font-size:12.5px;">@L["lockedGroupDetail.detailsLink"]</MudLink>
+                    <MudLink Href="@($"jobs/{j.Id}")" Class="jobby-mono jobby-text-sm">@L["lockedGroupDetail.detailsLink"]</MudLink>
                 </td>
             </tr>
         }
@@ -171,8 +170,6 @@ else
     private string? _error;
     private string? _loadedGroupId;
     private readonly CancellationTokenSource _cts = new();
-
-    private const string KeyStyle = "width:220px;color:var(--text-2);font-weight:500;white-space:nowrap;vertical-align:top;";
 
     protected override void OnInitialized()
     {

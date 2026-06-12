@@ -58,8 +58,8 @@ else if (_result is not null)
                                   style="background:var(--st-frozen-bg);color:var(--st-frozen);">
                                 <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small"/>
                             </span>
-                            <MudLink Href="@DetailHref(g.GroupId)" Class="jobby-mono"
-                                     Style="font-size:12.5px;font-weight:500;"
+                            <MudLink Href="@DetailHref(g.GroupId)" Class="jobby-mono jobby-text-sm"
+                                     Style="font-weight:500;"
                                      data-testid="@($"group-link-{TestToken(g.GroupId)}")">@g.GroupId</MudLink>
                         </div>
                     </td>
@@ -73,7 +73,7 @@ else if (_result is not null)
                     </td>
                     <td>
                         <div class="d-flex align-center gap-2">
-                            <span class="jobby-mono" style="font-size:12.5px;color:var(--text-1);">@g.LockerName</span>
+                            <span class="jobby-mono jobby-text-sm" style="color:var(--text-1);">@g.LockerName</span>
                             <StatusChip Status="g.LockerStatus"/>
                         </div>
                     </td>
@@ -117,7 +117,7 @@ else if (_result is not null)
                 <MudButton Size="Size.Small" Variant="Variant.Outlined" Disabled="@(_page <= 1)" OnClick="PrevPageAsync"
                            StartIcon="@Icons.Material.Filled.ChevronLeft"
                            data-testid="locked-groups-prev">@L["common.previous"]</MudButton>
-                <MudText Class="jobby-mono" Style="font-size:12.5px;color:var(--text-3);"
+                <MudText Class="jobby-mono jobby-text-sm" Style="color:var(--text-3);"
                          data-testid="locked-groups-page">@L.Format("common.pageN", _page)</MudText>
                 <MudButton Size="Size.Small" Variant="Variant.Outlined" Disabled="@(!HasNextPage)"
                            OnClick="NextPageAsync"

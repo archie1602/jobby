@@ -49,36 +49,36 @@ else
         <MudSimpleTable Dense="true" Bordered="false" Elevation="0" data-testid="detail-table">
             <tbody>
             <tr>
-                <td style="@KeyStyle">@L["field.id"]</td>
+                <td class="jobby-detail-key">@L["field.id"]</td>
                 <td>
                     <span class="jobby-mono">@_job.Id</span>
                     <CopyButton Text="@_job.Id.ToString()" Tooltip="@L["jobDetail.copyId"]" TestId="copy-id"/>
                 </td>
             </tr>
             <tr>
-                <td style="@KeyStyle">@L["field.name"]</td>
+                <td class="jobby-detail-key">@L["field.name"]</td>
                 <td>@_job.JobName</td>
             </tr>
             <tr>
-                <td style="@KeyStyle">@L["field.status"]</td>
+                <td class="jobby-detail-key">@L["field.status"]</td>
                 <td>
                     <StatusChip Status="_job.Status"/>
                 </td>
             </tr>
             <tr>
-                <td style="@KeyStyle">@L["field.queue"]</td>
+                <td class="jobby-detail-key">@L["field.queue"]</td>
                 <td><span class="jobby-pill">@_job.QueueName</span></td>
             </tr>
             <tr>
-                <td style="@KeyStyle">@L["field.created"]</td>
+                <td class="jobby-detail-key">@L["field.created"]</td>
                 <td><span class="jobby-mono">@Dt.FormatAbsolute(_job.CreatedAt)</span></td>
             </tr>
             <tr>
-                <td style="@KeyStyle">@L["jobDetail.scheduledStart"]</td>
+                <td class="jobby-detail-key">@L["jobDetail.scheduledStart"]</td>
                 <td><span class="jobby-mono">@Dt.FormatAbsolute(_job.ScheduledStartAt)</span></td>
             </tr>
             <tr>
-                <td style="@KeyStyle">@L["jobDetail.lastStartedFinished"]</td>
+                <td class="jobby-detail-key">@L["jobDetail.lastStartedFinished"]</td>
                 <td>
                     <span class="jobby-mono">@Fmt(_job.LastStartedAt)</span>
                     <span style="color:var(--text-3)"> / </span>
@@ -86,11 +86,11 @@ else
                 </td>
             </tr>
             <tr>
-                <td style="@KeyStyle">@L["field.attempts"]</td>
+                <td class="jobby-detail-key">@L["field.attempts"]</td>
                 <td><span class="jobby-mono">@_job.StartedCount</span></td>
             </tr>
             <tr>
-                <td style="@KeyStyle">@L["field.server"]</td>
+                <td class="jobby-detail-key">@L["field.server"]</td>
                 <td>
                     @if (string.IsNullOrEmpty(_job.ServerId))
                     {
@@ -103,13 +103,13 @@ else
                 </td>
             </tr>
             <tr>
-                <td style="@KeyStyle">@L["field.schedule"]</td>
+                <td class="jobby-detail-key">@L["field.schedule"]</td>
                 <td>
                     <ScheduleDisplay Schedule="@_job.Schedule" SchedulerType="@_job.SchedulerType"/>
                 </td>
             </tr>
             <tr>
-                <td style="@KeyStyle">@L["jobDetail.param"]</td>
+                <td class="jobby-detail-key">@L["jobDetail.param"]</td>
                 <td>
                     <CodeBlock Text="@_prettyParam" Json="true" TestId="detail-param"
                                CopyTestId="copy-param" CopyTooltip="@L["jobDetail.copyParameters"]"/>
@@ -118,7 +118,7 @@ else
             @if (!string.IsNullOrEmpty(_job.Error))
             {
                 <tr>
-                    <td style="@KeyStyle">@L["jobDetail.error"]</td>
+                    <td class="jobby-detail-key">@L["jobDetail.error"]</td>
                     <td>
                         <CodeBlock Text="@_job.Error" IsError="true" TestId="detail-error"
                                    CopyTestId="copy-error" CopyTooltip="@L["jobDetail.copyError"]"/>
@@ -139,8 +139,6 @@ else
     private CancellationTokenSource? _cts;
 
     private static readonly JsonSerializerOptions PrettyJsonOptions = new() { WriteIndented = true };
-
-    private const string KeyStyle = "width:220px;color:var(--text-2);font-weight:500;white-space:nowrap;vertical-align:top;";
 
     protected override void OnInitialized()
     {

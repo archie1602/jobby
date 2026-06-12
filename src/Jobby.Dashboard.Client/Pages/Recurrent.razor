@@ -59,10 +59,10 @@
         <PropertyColumn Property="x => x.ScheduledStartAt" Title="@L["recurrent.nextRun"]" Sortable="false">
             <CellTemplate>
                 <div class="d-flex flex-column">
-                    <span class="jobby-mono"
-                          style="font-size:12.5px;color:var(--text-1);">@Dt.FormatAbsolute(context.Item.ScheduledStartAt)</span>
-                    <span
-                        style="font-size:11.5px;color:var(--text-3);">@L.Relative(context.Item.ScheduledStartAt)</span>
+                    <span class="jobby-mono jobby-text-sm"
+                          style="color:var(--text-1);">@Dt.FormatAbsolute(context.Item.ScheduledStartAt)</span>
+                    <span class="jobby-text-xs"
+                          style="color:var(--text-3);">@L.Relative(context.Item.ScheduledStartAt)</span>
                 </div>
             </CellTemplate>
         </PropertyColumn>
@@ -71,9 +71,9 @@
                 @if (context.Item.LastFinishedAt is { } finished)
                 {
                     <div class="d-flex flex-column">
-                        <span class="jobby-mono"
-                              style="font-size:12.5px;color:var(--text-1);">@Dt.FormatAbsolute(finished)</span>
-                        <span style="font-size:11.5px;color:var(--text-3);">@L.Relative(finished)</span>
+                        <span class="jobby-mono jobby-text-sm"
+                              style="color:var(--text-1);">@Dt.FormatAbsolute(finished)</span>
+                        <span class="jobby-text-xs" style="color:var(--text-3);">@L.Relative(finished)</span>
                     </div>
                 }
                 else
