@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.IO.Compression;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.FileProviders;
 
@@ -24,7 +25,14 @@ internal static class JobbyDashboardShell
             var asset = JobbyDashboardClientAssets.Files.GetFileInfo(path);
             if (asset is { Exists: true, IsDirectory: false })
             {
-                await ServeAssetAsync(ctx, path, asset);
+                await ServeAssetAsync(ctx, path, rawAsset: asset);
+                return;
+            }
+
+            var brotliAsset = JobbyDashboardClientAssets.Files.GetFileInfo(path + ".br");
+            if (brotliAsset is { Exists: true, IsDirectory: false })
+            {
+                await ServeAssetAsync(ctx, path, rawAsset: null, brotliAsset);
                 return;
             }
         }
@@ -32,10 +40,11 @@ internal static class JobbyDashboardShell
         await WriteIndexAsync(ctx, prefix);
     }
 
-    private static async Task ServeAssetAsync(HttpContext ctx, string path, IFileInfo asset)
+    private static async Task ServeAssetAsync(HttpContext ctx, string path, IFileInfo? rawAsset,
+        IFileInfo? brotliAsset = null)
     {
         // Note: .NET 8 WASM assets here are not fingerprinted. Revalidate to keep boot integrity hashes coherent.
-        var etag = $"W/\"{AssetVersionToken}-{asset.Length:x}\"";
+        var etag = $"W/\"{AssetVersionToken}-{(rawAsset ?? brotliAsset)!.Length:x}\"";
         ctx.Response.Headers.ETag = etag;
         ctx.Response.Headers.Vary = "Accept-Encoding";
         ctx.Response.Headers.CacheControl = "no-cache";
@@ -50,19 +59,31 @@ internal static class JobbyDashboardShell
             ? contentType
             : "application/octet-stream";
 
+        brotliAsset ??= JobbyDashboardClientAssets.Files.GetFileInfo(path + ".br") is { Exists: true, IsDirectory: false } found
+            ? found
+            : null;
+
         if (AcceptsBrotli(ctx.Request.Headers.AcceptEncoding) &&
-            JobbyDashboardClientAssets.Files.GetFileInfo(path + ".br") is { Exists: true, IsDirectory: false } brotli)
+            brotliAsset is not null)
         {
             ctx.Response.Headers.ContentEncoding = "br";
-            ctx.Response.ContentLength = brotli.Length;
-            await using var compressed = brotli.CreateReadStream();
+            ctx.Response.ContentLength = brotliAsset.Length;
+            await using var compressed = brotliAsset.CreateReadStream();
             await compressed.CopyToAsync(ctx.Response.Body);
             return;
         }
 
-        ctx.Response.ContentLength = asset.Length;
-        await using var stream = asset.CreateReadStream();
-        await stream.CopyToAsync(ctx.Response.Body);
+        if (rawAsset is not null)
+        {
+            ctx.Response.ContentLength = rawAsset.Length;
+            await using var stream = rawAsset.CreateReadStream();
+            await stream.CopyToAsync(ctx.Response.Body);
+            return;
+        }
+
+        await using var compressedFallback = brotliAsset!.CreateReadStream();
+        await using var decompressed = new BrotliStream(compressedFallback, CompressionMode.Decompress);
+        await decompressed.CopyToAsync(ctx.Response.Body);
     }
 
     private static bool IfNoneMatch(HttpRequest request, string etag)

@@ -41,6 +41,9 @@
     <ItemGroup>
       <_JobbyClientAsset Include="$(_JobbyClientPublishDir)wwwroot/**/*"
                          Exclude="$(_JobbyClientPublishDir)wwwroot/**/*.gz" />
+      <_JobbyClientBrotliAsset Include="$(_JobbyClientPublishDir)wwwroot/**/*.br" />
+      <_JobbyClientBrotliSourceAsset Include="@(_JobbyClientBrotliAsset->'%(RootDir)%(Directory)%(Filename)')" />
+      <_JobbyClientAsset Remove="@(_JobbyClientBrotliSourceAsset)" />
       <EmbeddedResource Include="@(_JobbyClientAsset)"
                         Link="wwwroot/%(_JobbyClientAsset.RecursiveDir)%(_JobbyClientAsset.Filename)%(_JobbyClientAsset.Extension)" />
     </ItemGroup>
