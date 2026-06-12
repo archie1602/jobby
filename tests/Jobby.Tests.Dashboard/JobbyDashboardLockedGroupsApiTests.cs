@@ -106,8 +106,7 @@ public class JobbyDashboardLockedGroupsApiTests
         var state = new JobbyDashboardAuthState();
         state.Configure(JobbyDashboardAuthMode.Anonymous);
         var app = builder.Build();
-        app.UseRouting();
-        app.UseEndpoints(e => JobbyDashboardApi.MapAll(e, state));
+        JobbyDashboardApi.MapAll(app, state);
         await app.StartAsync();
         return app;
     }

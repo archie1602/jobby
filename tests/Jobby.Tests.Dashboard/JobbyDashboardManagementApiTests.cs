@@ -70,8 +70,7 @@ public class JobbyDashboardManagementApiTests
         var state = new JobbyDashboardAuthState();
         state.Configure(JobbyDashboardAuthMode.Anonymous);
         var app = builder.Build();
-        app.UseRouting();
-        app.UseEndpoints(e => JobbyDashboardApi.MapAll(e, state));
+        JobbyDashboardApi.MapAll(app, state);
         await app.StartAsync();
         return app;
     }
@@ -244,7 +243,7 @@ public class JobbyDashboardManagementApiTests
         app.UseRouting();
         app.UseAuthentication();
         app.UseAuthorization();
-        app.UseEndpoints(e => JobbyDashboardApi.MapAll(e, state));
+        JobbyDashboardApi.MapAll(app, state);
         await app.StartAsync();
         return app;
     }
