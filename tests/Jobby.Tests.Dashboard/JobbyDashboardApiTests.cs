@@ -92,7 +92,7 @@ public class JobbyDashboardApiTests
         var dto = await app.GetTestClient()
             .GetFromJsonAsync<JobbyDashboardClientConfigDto>("/api/config");
 
-        Assert.Null(dto!.DefaultTimeZoneId);
+        Assert.Equal(TimeZoneInfo.Utc.Id, dto!.DefaultTimeZoneId);
         Assert.Equal(DashboardDateStyle.Iso, dto.DefaultDateStyle);
         Assert.Equal(DashboardTimeStyle.H24WithSeconds, dto.DefaultTimeStyle);
 
@@ -126,7 +126,14 @@ public class JobbyDashboardApiTests
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseTestServer();
         builder.Logging.ClearProviders();
-        builder.Services.AddSingleton(new JobbyDashboardOptions { DefaultTimeZoneId = "Not/A_Zone" });
+        builder.Services.AddSingleton(new JobbyDashboardOptions
+        {
+            DefaultTimeZone = TimeZoneInfo.CreateCustomTimeZone(
+                "Not/A_Zone",
+                TimeSpan.Zero,
+                "Not a real zone",
+                "Not a real zone")
+        });
         builder.Services.AddAntiforgery(o => o.HeaderName = JobbyDashboardProtocol.ManagementRequestHeader);
         builder.Services.AddScoped<IDashboardDataReader>(_ => new FakeDashboardDataReader());
         var state = new JobbyDashboardAuthState();

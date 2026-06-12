@@ -1,6 +1,6 @@
 # Dashboard
 
-Jobby ships an optional dashboard UI for observing and managing background jobs running in any ASP.NET Core host - Web API, MVC, or Blazor.
+Jobby includes an optional dashboard UI for observing and managing background jobs in any ASP.NET Core host - Web API, MVC, or Blazor.
 
 The dashboard is a **Blazor WebAssembly** single-page application served as static files from the host, backed by a **stateless JSON API** (`/jobby/api/*`). It has no SignalR circuit, no server-side component state, and no session affinity requirement.
 
@@ -12,7 +12,7 @@ The dashboard is a **Blazor WebAssembly** single-page application served as stat
 | `Jobby.Postgres` | `AddJobbyPostgresDashboardStorage()` - PostgreSQL read and command storage |
 | `Jobby.Dashboard.Authorization` | Optional first-party Basic authentication (`AddBasicAuth` / `AddBasicAuthScheme`) and `PasswordHasher` |
 
-`Jobby.Dashboard` depends on ASP.NET Core. It has no effect on the Jobby engine itself: removing the package and its registration calls leaves no behavioral change.
+`Jobby.Dashboard` depends on ASP.NET Core. It does not affect the Jobby engine itself: removing the package and its registration calls leaves the engine behavior unchanged.
 
 ## Setup
 
@@ -195,6 +195,28 @@ builder.Services.AddJobbyPostgresDashboardStorage(dataSource, o =>
 });
 ```
 
+## Display settings
+
+`JobbyDashboardOptions` can set the initial time zone, date/time format, and UI language. The client reads these values from `GET /jobby/api/config` when it starts.
+
+Users can change the same settings in the dashboard top bar. Their choice is saved in `localStorage` and takes priority over the server defaults until they reset it.
+
+```csharp
+builder.Services
+    .AddJobbyDashboard(o =>
+    {
+        o.DefaultTimeZone   = TimeZoneInfo.Utc;
+        o.DefaultDateStyle  = DashboardDateStyle.Iso;
+        o.DefaultTimeStyle  = DashboardTimeStyle.H24WithSeconds;
+        o.DefaultLanguage   = DashboardLanguage.English;
+    })
+    .AllowAnonymous();
+```
+
+`DefaultTimeZone` is `TimeZoneInfo.Utc` by default. Use `TimeZoneInfo.FindSystemTimeZoneById(...)` if you want another zone. The API returns timestamps in UTC. The UI converts them to the selected time zone for display, and converts date filters back to UTC before sending requests.
+
+`/api/config` also includes `ServerTimeUtc`. The client uses it for relative values such as "5 minutes ago", so those labels do not depend on the browser clock.
+
 ## Features and API
 
 The dashboard displays:
@@ -213,7 +235,7 @@ Read endpoints are exposed under the mount prefix:
 
 | Endpoint | Description |
 |---|---|
-| `GET /jobby/api/config` | Dashboard configuration (fetched by WASM client at startup) |
+| `GET /jobby/api/config` | Dashboard configuration fetched by the WASM client at startup |
 | `GET /jobby/api/stats` | Aggregate job statistics |
 | `GET /jobby/api/jobs` | Paginated job list (query params: `status`, `statuses`, `queueName`, `jobNameSearch`, `createdFrom`, `createdTo`, `page`, `pageSize`, `sortBy`, `sortDescending`) |
 | `GET /jobby/api/jobs/{id}` | Single job detail |

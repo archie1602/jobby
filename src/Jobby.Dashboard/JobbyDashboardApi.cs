@@ -37,9 +37,8 @@ internal static class JobbyDashboardApi
                         statusCode: StatusCodes.Status500InternalServerError);
                 }
 
-                var defaultTimeZoneId = opts.DefaultTimeZoneId;
-                if (!string.IsNullOrWhiteSpace(defaultTimeZoneId) &&
-                    !TimeZoneInfo.TryFindSystemTimeZoneById(defaultTimeZoneId, out _))
+                var defaultTimeZoneId = opts.DefaultTimeZone.Id;
+                if (!TimeZoneInfo.TryFindSystemTimeZoneById(defaultTimeZoneId, out _))
                 {
                     defaultTimeZoneId = null;
                 }

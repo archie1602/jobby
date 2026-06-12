@@ -22,12 +22,22 @@ public class JobbyDashboardBuilderTests
             o.RefreshInterval = TimeSpan.FromSeconds(10);
             o.StaleServerThresholdSeconds = 600;
             o.ReadOnly = true;
+            o.DefaultTimeZone = TimeZoneInfo.Utc;
         });
 
         var options = services.BuildServiceProvider().GetRequiredService<JobbyDashboardOptions>();
         Assert.Equal(TimeSpan.FromSeconds(10), options.RefreshInterval);
         Assert.Equal(600, options.StaleServerThresholdSeconds);
         Assert.True(options.ReadOnly);
+        Assert.Equal(TimeZoneInfo.Utc, options.DefaultTimeZone);
+    }
+
+    [Fact]
+    public void DefaultTimeZone_RejectsNull()
+    {
+        var options = new JobbyDashboardOptions();
+
+        Assert.Throws<ArgumentNullException>(() => options.DefaultTimeZone = null!);
     }
 
     [Fact]

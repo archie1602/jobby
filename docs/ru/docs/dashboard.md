@@ -1,18 +1,18 @@
 # Дашборд
 
-Jobby поставляется с необязательным дашбордом для просмотра и управления фоновыми задачами в любом ASP.NET Core-хосте: Web API, MVC или Blazor.
+В Jobby есть необязательный дашборд для просмотра и управления фоновыми задачами в любом ASP.NET Core-хосте: Web API, MVC или Blazor.
 
-Дашборд работает как одностраничное приложение на **Blazor WebAssembly**: хост раздаёт статические файлы, а данные и команды проходят через **JSON API без серверного состояния** (`/jobby/api/*`). Дашборд не использует SignalR circuit, не хранит состояние компонентов на сервере и не требует привязки пользователя к конкретной реплике.
+Дашборд работает как одностраничное приложение на **Blazor WebAssembly**: хост раздаёт статические файлы, а данные и команды проходят через **JSON API без серверного состояния** (`/jobby/api/*`). Здесь нет SignalR circuit, серверного состояния компонентов и привязки пользователя к конкретной реплике.
 
 ## Пакеты
 
 | Пакет | Назначение |
 |---|---|
-| `Jobby.Dashboard` | Интерфейс на Blazor WebAssembly (встроенные статические файлы) + маршруты JSON API; `AddJobbyDashboard()` / `MapJobbyDashboard()` |
+| `Jobby.Dashboard` | Интерфейс на Blazor WebAssembly (встроенные статические файлы) + JSON API; `AddJobbyDashboard()` / `MapJobbyDashboard()` |
 | `Jobby.Postgres` | `AddJobbyPostgresDashboardStorage()` - PostgreSQL-хранилище для чтения и команд |
 | `Jobby.Dashboard.Authorization` | Дополнительная встроенная Basic-аутентификация (`AddBasicAuth` / `AddBasicAuthScheme`) и `PasswordHasher` |
 
-`Jobby.Dashboard` зависит от ASP.NET Core. Удаление пакета и соответствующих вызовов регистрации не затрагивает поведение движка Jobby.
+`Jobby.Dashboard` зависит от ASP.NET Core. Удаление пакета и соответствующих вызовов регистрации не меняет поведение движка Jobby.
 
 ## Настройка
 
@@ -30,7 +30,7 @@ IJobbyDashboardBuilder dashboardBuilder = builder.Services.AddJobbyDashboard(o =
 
 dashboardBuilder.AllowAnonymous();
 
-// Схема и префикс ДОЛЖНЫ совпадать с настройками PostgreSQL движка (см. ниже).
+// Схема и префикс должны совпадать с настройками PostgreSQL движка (см. ниже).
 builder.Services.AddJobbyPostgresDashboardStorage(npgsqlDataSource, o =>
 {
     o.SchemaName   = "";          // пустая строка -> схема public (по умолчанию)
@@ -95,9 +95,9 @@ app.Run();
 
 **Дашборд защищён по умолчанию.** `MapJobbyDashboard` выбрасывает исключение при запуске, если через `IJobbyDashboardBuilder` не был выбран ровно один способ авторизации. Если не выбрать способ авторизации или выбрать два, приложение завершит запуск с исключением.
 
-Статические файлы Blazor WebAssembly-приложения и файлы фреймворка **всегда публичны** - они не содержат секретов и должны быть доступны браузеру до загрузки приложения. Только JSON API (`/jobby/api/*`) защищается выбранной политикой. Это поведение сохраняется даже при наличии у хоста глобального `AuthorizationOptions.FallbackPolicy`: для статических ресурсов явно указан `AllowAnonymous`, а для API - `RequireAuthorization`.
+Статические файлы Blazor WebAssembly-приложения и файлы фреймворка **всегда доступны без авторизации** - они не содержат секретов и должны загрузиться в браузер до старта приложения. Выбранная политика защищает только JSON API (`/jobby/api/*`). Это поведение сохраняется даже при глобальном `AuthorizationOptions.FallbackPolicy`: для статических ресурсов явно указан `AllowAnonymous`, а для API - `RequireAuthorization`.
 
-> **Требуется middleware аутентификации/авторизации.** Дашборд защищает свой API метаданными авторизации эндпоинтов (`RequireAuthorization`) и не добавляет middleware в ваш конвейер. Со стандартной минимальной моделью хостинга всё работает из коробки: `AddJobbyDashboard` регистрирует сервисы аутентификации/авторизации, а `WebApplication` автоматически добавляет `UseAuthentication`/`UseAuthorization`. Если вы строите конвейер middleware вручную (например, через `UseRouting`/`UseEndpoints`), вы **обязаны** вызвать `app.UseAuthentication()` и `app.UseAuthorization()` до эндпоинтов дашборда - без middleware авторизации метаданные авторизации API не применяются.
+> **Не забудьте подключить middleware аутентификации/авторизации.** Дашборд защищает API через метаданные маршрутов (`RequireAuthorization`) и не добавляет middleware в конвейер сам. Со стандартной минимальной моделью хостинга всё работает из коробки: `AddJobbyDashboard` регистрирует сервисы аутентификации/авторизации, а `WebApplication` автоматически добавляет `UseAuthentication`/`UseAuthorization`. Если вы строите конвейер middleware вручную (например, через `UseRouting`/`UseEndpoints`), вызовите `app.UseAuthentication()` и `app.UseAuthorization()` до маршрутов дашборда - без middleware авторизации метаданные API не применяются.
 
 Выберите ровно один вариант:
 
@@ -143,7 +143,7 @@ builder.Services
 app.MapJobbyDashboard("/jobby");
 ```
 
-`AddBasicAuth` одновременно регистрирует схему Basic-аутентификации **и** настраивает авторизацию дашборда - не сочетайте его с другими методами выбора авторизации.
+`AddBasicAuth` одновременно регистрирует схему Basic-аутентификации **и** настраивает авторизацию дашборда. Не сочетайте его с другими методами выбора авторизации.
 
 **Сгенерируйте хеш пароля** (никогда не храните пароль в открытом виде):
 
@@ -153,11 +153,11 @@ string hash = Jobby.Dashboard.Authorization.PasswordHasher.Hash("ваш-паро
 
 `PasswordHasher.Hash` возвращает строку вида `JDPBKDF2$v1$...` (PBKDF2-HMAC-SHA256). `AddBasicAuth` выбрасывает исключение при запуске, если переданный `PasswordHash` не является корректной PBKDF2-кодировкой.
 
-> **Требуется HTTPS:** Basic-аутентификация передаёт учётные данные в base64-кодировке. В продакшн-окружении дашборд всегда должен работать через HTTPS.
+> **Требуется HTTPS:** Basic-аутентификация передаёт учётные данные в base64-кодировке. В рабочей среде дашборд всегда должен работать через HTTPS.
 
 ### Вариант 5 - Совместное использование Basic и JWT (продвинутый)
 
-Используйте `AddBasicAuthScheme` для регистрации Basic-схемы без выбора политики авторизации, затем вызовите `RequireAuthorization` для комбинирования с Bearer:
+Используйте `AddBasicAuthScheme`, чтобы зарегистрировать Basic-схему без выбора политики авторизации, а затем вызовите `RequireAuthorization`, чтобы объединить её с Bearer:
 
 ```csharp
 builder.Services
@@ -195,6 +195,28 @@ builder.Services.AddJobbyPostgresDashboardStorage(dataSource, o =>
 });
 ```
 
+## Настройки отображения
+
+Через `JobbyDashboardOptions` можно задать начальный часовой пояс, формат даты и времени, а также язык интерфейса. Клиент получает эти значения из `GET /jobby/api/config` при запуске.
+
+Пользователь может поменять те же настройки в верхней панели дашборда. Выбор сохраняется в `localStorage` и используется вместо настроек сервера, пока пользователь не сбросит его.
+
+```csharp
+builder.Services
+    .AddJobbyDashboard(o =>
+    {
+        o.DefaultTimeZone   = TimeZoneInfo.Utc;
+        o.DefaultDateStyle  = DashboardDateStyle.Iso;
+        o.DefaultTimeStyle  = DashboardTimeStyle.H24WithSeconds;
+        o.DefaultLanguage   = DashboardLanguage.English;
+    })
+    .AllowAnonymous();
+```
+
+`DefaultTimeZone` по умолчанию равен `TimeZoneInfo.Utc`. Если нужен другой пояс, используйте `TimeZoneInfo.FindSystemTimeZoneById(...)`. API возвращает время в UTC. Интерфейс показывает его в выбранном часовом поясе и переводит фильтры по датам обратно в UTC перед запросом.
+
+В `/api/config` также передаётся `ServerTimeUtc`. Клиент использует его для относительных значений вроде «5 минут назад», чтобы они не зависели от часов в браузере.
+
 ## Возможности и API
 
 Дашборд показывает:
@@ -213,7 +235,7 @@ builder.Services.AddJobbyPostgresDashboardStorage(dataSource, o =>
 
 | Маршрут | Описание |
 |---|---|
-| `GET /jobby/api/config` | Конфигурация дашборда (запрашивается клиентским приложением при старте) |
+| `GET /jobby/api/config` | Конфигурация дашборда, которую клиент запрашивает при старте |
 | `GET /jobby/api/stats` | Агрегированная статистика по задачам |
 | `GET /jobby/api/jobs` | Постраничный список задач (параметры: `status`, `statuses`, `queueName`, `jobNameSearch`, `createdFrom`, `createdTo`, `page`, `pageSize`, `sortBy`, `sortDescending`) |
 | `GET /jobby/api/jobs/{id}` | Детали одной задачи |
@@ -235,7 +257,7 @@ builder.Services.AddJobbyPostgresDashboardStorage(dataSource, o =>
 
 Неизвестные пути в рамках `/jobby/api/*` возвращают `404`.
 
-## Продакшн-хостинг - Kubernetes / несколько реплик
+## Хостинг в Kubernetes / несколько реплик
 
 Дашборд является Blazor WebAssembly-приложением **без серверного состояния** и работает через JSON API **без серверного состояния**. Так как он раздаётся как статическое WebAssembly-приложение, а не работает как интерактивное серверное Blazor-приложение:
 
@@ -243,7 +265,7 @@ builder.Services.AddJobbyPostgresDashboardStorage(dataSource, o =>
 - **Нет привязки сессии к реплике.** Запросы можно свободно балансировать между репликами без sticky sessions / session affinity.
 - **Нет состояния компонентов на сервере.** Дашборд не хранит UI-состояние в процессе ASP.NET Core.
 
-Обычные продакшн-требования по-прежнему актуальны:
+Обычные требования для рабочей среды по-прежнему актуальны:
 
 - **HTTPS** - обязателен при использовании Basic-аутентификации (учётные данные передаются в base64-кодировке, без шифрования).
 - **Обратный прокси и хостинг на подпути** - настройте `UseForwardedHeaders` и базовый путь прокси как обычно. Дашборд динамически подставляет корректный `<base href>`, поэтому хостинг на подпути работает без дополнительной ручной настройки.
